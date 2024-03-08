@@ -1,0 +1,30 @@
+.frontimg {
+    width: 200px;
+    border-radius: 100%;
+}
+.descolumn {
+    display: flex;
+    flex-direction: column;
+    position:absolute;
+    right: 50px;
+    width: 500px;
+    color: white;
+    background-color: rgba(0, 0, 0, 0.5);
+    height: 100%;
+    padding: 0 15px;
+}
+
+.scrolldiv {
+    margin-top: 40px;
+    height: 100%;
+    overflow: auto;
+}
+
+/* .scrolldiv::-webkit-scrollbar {
+    background-color: #2F2F37;
+    width: 10px;
+    height: 8px;
+}
+.scrolldiv::-webkit-scrollbar-thumb {
+    background: #8585AD;
+} */

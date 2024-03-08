@@ -1,7 +1,8 @@
 import React, { useRef, useEffect, useState } from 'react';
-import maplibregl from 'maplibre-gl';
+import maplibregl, { DragPanHandler, disable } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import './map.css';
+import styles from './map.module.css'
+import buildings from '../../layers/4buildings.geojson'
 
 
 
@@ -11,23 +12,9 @@ export default function Map() {
   const map = useRef(null);
   const [lng] = useState(37.54);
   const [lat] = useState(55.43);
-  const [zoom] = useState(13);
+  const [zoom] = useState(11);
   const [API_KEY] = useState('YOUR_MAPTILER_API_KEY_HERE');
   const BOUNDS = [[37.405819,55.344057],[37.902264,55.512526]]
-
-
-  const EPOQUES = [
-    {name:'artisan', color:'#e51728', min: 1554, max: 1781},
-    {name:'merchant', color:'#e57316', min: 1781, max: 1871},
-    {name:'industrial', color:'#e5a717', min: 1871, max: 1921},
-    {name:'revolutionary', color:'#e6caa0', min: 1921, max: 1941},
-    {name:'postwar', color:'#f3f3f3', min: 1941, max: 1956},
-    {name:'thaw', color:'#a1e6db', min: 1956, max: 1973},
-    {name:'stagnation', color:'#17afe6', min: 1973, max: 1993},
-    {name:'postindustrial', color:'#1616e5', min: 1993, max: 2013},
-    {name:'postmodern', color:'#ab17e6', min: 2013, max: 2023}
-  ]
-
 
   useEffect(() => {
     if (map.current) return; // stops map from intializing more than once
@@ -40,40 +27,109 @@ export default function Map() {
       maxBounds: BOUNDS
     });
 
-    const loadEpoque = (name,color,a,b) => {
-        map.current.addLayer({
-                  id: name,
-                  type: 'fill',
-                  source: 'buildings',
-                  layout: {},
-                  paint: {
-                      'fill-color': color
-                  },
-                  filter: ['all',['>',['get','year_built'],a],['<=',['get','year_built'],b]]
-              });
-      }
-
       setTimeout(() => {
         map.current.addSource('buildings', {
           type: 'geojson',
-          data: '../../layers/buildings ',
+          data: buildings,
           filter: ['>',['get','year_built'],0]
         });
       
-        EPOQUES.forEach(epoque => { 
-          loadEpoque(epoque.name,epoque.color,epoque.min,epoque.max)
+        map.current.addLayer({
+          id: '2dbuildings',
+          type: 'fill',
+          source: 'buildings',
+          layout: {},
+          paint: {
+              'fill-color': {
+                property: 'year_built',
+                type: 'interval',
+                stops: [
+                  [1680, '#e51728'],
+                  [1781, '#e57316'],
+                  [1871, '#e5a717'],
+                  [1921, '#e6caa0'],
+                  [1943, '#f3f3f3'],
+                  [1956, '#a1e6db'],
+                  [1973, '#17afe6'],
+                  [1993, '#1616e5'],
+                  [2013, '#ab17e6'],
+                ]
+              },
+          },
         });
-      }, 1000)
 
+        map.current.on('click', '2dbuildings', onClick);
+        
 
+      }, 100)
 
+      
 
   }, [API_KEY, lng, lat, zoom]);
 
+  const disableInteraction = () => {
+        map.current.dragPan.disable();
+        map.current.scrollZoom.disable();
+  }
+  const add3D = ()=> {
+    map.current.addLayer({
+      id: '3dbuildings',
+      source: 'buildings',
+      'type': 'fill-extrusion',
+      'minzoom': 11,
+      'paint': {
+          'fill-extrusion-color': {
+            property: 'year_built',
+            type: 'interval',
+            stops: [
+              [1680, '#e51728'],
+              [1781, '#e57316'],
+              [1871, '#e5a717'],
+              [1921, '#e6caa0'],
+              [1943, '#f3f3f3'],
+              [1956, '#a1e6db'],
+              [1973, '#17afe6'],
+              [1993, '#1616e5'],
+              [2013, '#ab17e6'],
+            ]
+          },
+          'fill-extrusion-height': [
+              'interpolate',
+              ['linear'],
+              ['zoom'],
+              11, 0,
+              12, ['*',['get', 'level'],5]
+          ]
+      }
+    })
+  }
+
+  
+
+  const onClick = (e) => {
+    const year = e.features[0].properties.year_built;
+    console.log(year)
+  };
+  let threedee = false;
+
+  const toggle3D = () => {
+    if (!threedee) {
+      map.current.off('click', '2dbuildings', onClick);
+      add3D();
+      map.current.on('click', '3dbuildings', onClick);
+      threedee = true;
+    } else {
+      map.current.off('click', '3dbuildings', onClick);
+      map.current.removeLayer('3dbuildings');
+      map.current.on('click', '2dbuildings', onClick);
+      threedee = false;
+    }
+  };
 
   return (
     <div className="map-wrap">
-      <div ref={mapContainer} className="map" />
+      <div ref={mapContainer} className={styles.map} />
+      <div onClick={toggle3D} className={styles.btn}/>
     </div>
   );
 }

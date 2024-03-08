@@ -2,13 +2,17 @@
 import './App.css';
 import Navbar from './components/navbar/navbar.js';
 import Map from './components/map/map.js';
+import { Description } from './components/description/description.jsx';
 
 function App() {
   
 
   return (
     
-    <div id='map'><Navbar/><Map/></div>
+    <div>
+      <Map/>
+      <Description />
+    </div>
 
   );
 }
